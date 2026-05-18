@@ -1,6 +1,9 @@
+# Virtual Environments
 .venv/
 .venv311/
 venv/
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -8,7 +11,39 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.DS_Store
-.env
+*.egg-info/
+.eggs/
+
+# Django
 db.sqlite3
+*.sqlite3
+/staticfiles/
+
+# Frontend
 frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# ML Models (too large for deployment)
+*.pt
+*.pth
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*

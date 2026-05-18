@@ -128,6 +128,14 @@ Model files are included:
 
 ## 🌐 Deployment
 
+### Architecture
+
+- **Frontend:** Lightweight React + Vite app → **Vercel** (sends image uploads to backend API)
+- **Backend:** Django REST API + YOLO models → **Heroku/Railway/DigitalOcean** 
+- **Models:** Stored on backend server (not deployed with frontend)
+
+This separation keeps the frontend bundle small (<5 MB) for fast Vercel deployment.
+
 ### Deploy Frontend to Vercel
 
 The React frontend is production-ready and can be deployed to Vercel in minutes:

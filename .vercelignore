@@ -1,0 +1,40 @@
+# Vercel Deployment Ignore
+# Exclude large model files from deployment
+
+# ML Models (hosted separately or fetched from backend)
+*.pt
+*.pth
+*.onnx
+
+# Large data files
+*.zip
+*.tar.gz
+*.rar
+
+# Documentation
+*.md
+docs/
+
+# Version control
+.git/
+.github/
+
+# Local development
+.venv/
+.venv311/
+venv/
+__pycache__/
+.pytest_cache/
+
+# Environment files (use Vercel dashboard instead)
+.env
+.env.local
+
+# Python files (only needed for backend)
+requirements.txt
+main.py
+backend/
+
+# Temporary files
+temp.jpg
+*.log
