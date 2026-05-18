@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
 function ChatbotPage() {
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState([]);
   const handleSubmit = async () => {
-    let res = await axios.post('http://127.0.0.1:8000/api/chatbot/', { query });
+    let res = await axios.post(`${API_URL}/api/chatbot/`, { query });
     setHistory([...history, { user: query, bot: res.data.response }]);
     setQuery("");
   };

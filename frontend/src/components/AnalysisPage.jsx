@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000';
 
 function AnalysisPage({ patientName, patientId }) {
   const [image, setImage] = useState(null);
@@ -12,7 +14,7 @@ function AnalysisPage({ patientName, patientId }) {
     formData.append('model', model);
     formData.append('patient_name', patientName);
     formData.append('patient_id', patientId);
-    let res = await axios.post('http://127.0.0.1:8000/api/analyze/', formData);
+    let res = await axios.post(`${API_URL}/api/analyze/`, formData);
     setResult({ disease: res.data.detected_disease, report: res.data.medical_report });
   };
   return (
