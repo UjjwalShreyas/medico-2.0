@@ -2,15 +2,46 @@
 Django settings for the Medico-AI backend project.
 """
 
+import logging
+import os
 from pathlib import Path
+
+from django.core.management.utils import get_random_secret_key
+
+from .envloader import env_bool, env_list, load_env_file
+
+load_env_file()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-rq9tzx52kwlhj1tnp3w#^dr6j_kvu5tt-fq5_#vb#49+r#3cb6'
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+# --- Secrets / environment-specific switches -------------------------------
+# Nothing secret lives in the repo any more. Set these in .env or on the host:
+#   DJANGO_SECRET_KEY, DJANGO_DEBUG, DJANGO_ALLOWED_HOSTS, CORS_ALLOWED_ORIGINS
+DEBUG = env_bool("DJANGO_DEBUG", default=False)
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+	# This API uses no sessions or logins, so an ephemeral key is safe; it just
+	# changes on every restart. Set DJANGO_SECRET_KEY to make it stable.
+	SECRET_KEY = get_random_secret_key()
+	logging.getLogger(__name__).warning(
+		"DJANGO_SECRET_KEY is not set - using a temporary random key."
+	)
+
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+
+# Browsers on another origin (the Vercel frontend, or Vite on :3000) need CORS.
+CORS_ALLOWED_ORIGINS = env_list(
+	"CORS_ALLOWED_ORIGINS",
+	"http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173",
+)
+
+# Uploaded scans are capped at 10 MB (also re-checked in the view).
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES + 1024 * 1024
 
 INSTALLED_APPS = [
+	'corsheaders',
 	'django.contrib.admin',
 	'django.contrib.auth',
 	'django.contrib.contenttypes',
@@ -22,6 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+	'corsheaders.middleware.CorsMiddleware',
 	'django.middleware.security.SecurityMiddleware',
 	'django.contrib.sessions.middleware.SessionMiddleware',
 	'django.middleware.common.CommonMiddleware',
@@ -79,3 +111,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- Django REST Framework -------------------------------------------------
+# There are no user accounts yet, so the only protection against someone
+# burning the Gemini quota is rate limiting per client IP. Tune as needed.
+REST_FRAMEWORK = {
+	'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+	'DEFAULT_THROTTLE_CLASSES': ['rest_framework.throttling.AnonRateThrottle'],
+	'DEFAULT_THROTTLE_RATES': {'anon': os.environ.get('API_THROTTLE_RATE', '30/minute')},
+}

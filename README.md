@@ -1,317 +1,161 @@
 # 🏥 Medico AI - AI-Powered Medical Image Analysis
 
-Medico AI is a **fully functional** medical imaging assistant that combines YOLO-based disease detection, AI-generated medical reports, and an intelligent chatbot. Deploy it locally, on your server, or on Vercel with zero hassle.
+Medico AI is a **demo / learning project** that combines YOLO-based detection on medical images, AI-written explanatory notes (Google Gemini), and a chatbot.
+
+> ⚠️ **Not a medical device.** Output is AI-generated, can be wrong, and must never replace a doctor's diagnosis. See [Model notes](#-model-notes-read-this-before-trusting-results).
 
 ## ✨ Features
 
-- **🔍 Disease Detection**: Upload medical images and detect conditions using YOLO models (Tuberculosis, Eye Disease, Bone Fracture)
-- **📋 AI-Powered Reports**: Automatic medical report generation using Google Gemini
-- **💬 Intelligent Chatbot**: Ask medical questions and get answers from Gemini
-- **👤 Patient Tracking**: Record patient name and ID through the entire workflow
-- **🎨 Beautiful UI**: Responsive design with Tailwind CSS
-- **⚡ Multiple Entry Points**: Streamlit web app, Django REST API, and React frontend
+- **🔍 Detection**: Upload an image and run one of three YOLO models (Tuberculosis, Eye Disease, Bone Fracture)
+- **📋 AI notes**: Gemini writes plain-language notes about the detected finding (patient name/ID are **not** sent to Gemini)
+- **💬 Chatbot**: Ask questions and get answers from Gemini
+- **⚡ Three entry points**: Streamlit app, Django REST API, and a React frontend
 
 ## 📁 Project Structure
 
 ```
-medico-ai/
-├── main.py                  # Streamlit web app (fully functional)
+medico-2.0/
+├── main.py                  # Streamlit web app
 ├── backend/                 # Django REST API
-│   ├── manage.py           # Django entry point
-│   ├── medicoai/           # Settings & WSGI/ASGI
-│   └── core/               # API views & utilities
-├── frontend/               # React + Vite (production-ready for Vercel)
-│   ├── src/               # React components
-│   ├── package.json       # Npm dependencies
-│   └── vite.config.js     # Vite configuration
-├── requirements.txt        # Python dependencies
-├── vercel.json            # Vercel deployment config
-└── .env.example           # Environment template
+│   ├── manage.py
+│   ├── medicoai/            # Settings, URLs, .env loader
+│   └── core/                # API views, Gemini + YOLO helpers, tests
+├── frontend/                # React + Vite
+├── requirements.txt         # Backend dependencies
+├── requirements-streamlit.txt  # Backend + Streamlit
+├── Procfile                 # Process definition for Heroku-style hosts
+├── vercel.json              # Frontend deployment config
+└── .env.example             # Environment template
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
+Prerequisites: Python 3.11+, Node.js 18+, Git.
 
-- Python 3.11+
-- Node.js 18+
-- Git
+```bash
+git clone https://github.com/UjjwalShreyas/medico-2.0.git
+cd medico-2.0
 
-### Setup
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-1. **Clone and enter the repository:**
-   ```bash
-   git clone https://github.com/MitulNayakwadi/Medico-AI.git
-   cd Medico-AI
-   ```
+pip install -r requirements-streamlit.txt   # or requirements.txt for the API only
 
-2. **Create a Python virtual environment:**
-   ```bash
-   python -m venv .venv311
-   .\.venv311\Scripts\activate  # On Windows
-   # source .venv311/bin/activate  # On macOS/Linux
-   ```
+cp .env.example .env             # Windows: copy .env.example .env
+# then open .env and paste your GEMINI_API_KEY
+```
 
-3. **Install Python dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Create a `.env` file for Gemini API:**
-   ```bash
-   echo GEMINI_API_KEY=your_api_key_here > .env
-   ```
+> The first install downloads PyTorch (large). That is normal.
 
 ## 🎯 Run Locally
 
-### Option 1: Streamlit App (Recommended for Quick Demo)
-
-The Streamlit app is the **fastest way to see everything working**:
+### Option 1: Streamlit app
 
 ```bash
 streamlit run main.py
 ```
+Open http://localhost:8501
 
-Then open your browser to **http://localhost:8501**
+### Option 2: Django API + React frontend
 
-**What you can do:**
-- 📤 Upload medical images
-- 🔍 Select from 3 disease detection models
-- 📊 View AI-detected conditions and confidence scores
-- 📋 Generate detailed medical reports
-- 💬 Chat with the AI assistant
-
----
-
-### Option 2: Django Backend API
-
-Run the backend API for programmatic access or to power the React frontend:
-
+Terminal 1 - backend:
 ```bash
-python backend/manage.py migrate
 python backend/manage.py runserver
 ```
 
-API endpoints:
-- `POST http://localhost:8000/api/analyze/` - Upload image and detect disease
-- `POST http://localhost:8000/api/chatbot/` - Chat with AI assistant
-- `GET http://localhost:8000/admin/` - Django admin panel
-
----
-
-### Option 3: React Frontend (Local Development)
-
-Run the modern React UI with Vite:
-
+Terminal 2 - frontend:
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Open http://localhost:3000. In development the frontend calls `/api/...` and Vite forwards it to Django on port 8000, so leave `VITE_BACKEND_URL` empty.
 
-Then open **http://localhost:3000**
+API endpoints:
+- `POST /api/analyze/` - upload an image and detect
+- `POST /api/chatbot/` - chat with the assistant
 
-This connects to the backend at `http://localhost:8000` (you need to run the backend in another terminal).
+## ✅ Run the tests
 
-## 📦 Available Models
+```bash
+python backend/manage.py test
+```
+Gemini is mocked, so no API key or internet is needed. The three YOLO models are real, so this also checks that the `.pt` files load and run.
 
-The app includes three pre-trained YOLO models:
+## 📦 Model notes (read this before trusting results)
 
-1. **Tuberculosis (Lung Cancer)** - Detects lung diseases
-2. **Eye Disease** - Identifies eye conditions
-3. **Bone Fracture** - Detects skeletal injuries
+| Menu name | Classes the model outputs | Validation mAP50* |
+|---|---|---|
+| Tuberculosis (Lung Cancer) | `mtb` | 0.90 |
+| Eye Disease | Bulging_Eyes, Cataracts, Crossed_Eyes, Glaucoma, Uveitis | 0.65 |
+| Bone Fracture | angle, fracture, line, messed_up_angle | 0.36 |
 
-Model files are included:
-- `tuberculosis(lung_cancer).pt`
-- `eye_disease.pt`
-- `bone_fracture.pt`
+\*Read from the training metadata stored inside each `.pt` file.
+
+- The TB model has a single class, `mtb` (the usual abbreviation for *M. tuberculosis*). That points to a bacteria detector, not a chest X-ray lung-cancer detector, so the menu label "Tuberculosis (Lung Cancer)" is misleading. Confirm what data it was trained on before relying on it.
+- In the bone model only `fracture` is treated as a finding. `angle`, `line` and `messed_up_angle` look like annotation labels and are ignored (`NON_DIAGNOSTIC_LABELS` in `backend/core/yolo_utils.py`).
+- The bone model's accuracy is low. Treat its output as a demo.
 
 ## 🌐 Deployment
 
-### Architecture
+- **Frontend** → Vercel (static React build)
+- **Backend** → any Python host (Railway, Render, Heroku, a VPS). Uses `Procfile` + `gunicorn`.
 
-- **Frontend:** Lightweight React + Vite app → **Vercel** (sends image uploads to backend API)
-- **Backend:** Django REST API + YOLO models → **Heroku/Railway/DigitalOcean** 
-- **Models:** Stored on backend server (not deployed with frontend)
+### Frontend on Vercel
+1. Push to GitHub, then import the repo in Vercel (the build settings come from `vercel.json`).
+2. In the Vercel dashboard add the environment variable `VITE_BACKEND_URL=https://your-backend-url`.
+3. Deploy.
 
-This separation keeps the frontend bundle small (<5 MB) for fast Vercel deployment.
-
-### Deploy Frontend to Vercel
-
-The React frontend is production-ready and can be deployed to Vercel in minutes:
-
-1. **Ensure your code is pushed to GitHub:**
-   ```bash
-   git add .
-   git commit -m "Ready for Vercel deployment"
-   git push
-   ```
-
-2. **Go to [Vercel.com](https://vercel.com) and sign in with GitHub**
-
-3. **Click "New Project" and select `Medico-AI` repository**
-
-4. **Configure the build:**
-   - Build Command: `cd frontend && npm install && npm run build`
-   - Output Directory: `frontend/dist`
-   - Root Directory: `.` (default)
-
-5. **Add Environment Variables in Vercel Dashboard:**
-   ```
-   VITE_BACKEND_URL=https://your-backend-url.com
-   ```
-
-6. **Click "Deploy"** and Vercel will handle the rest!
-
-Your site will be live at a URL like `https://medico-ai.vercel.app`
-
-### Deploy Backend to Heroku/Railway/DigitalOcean
-
-The Django backend can be deployed to any Python-hosting service:
-
-**For Heroku:**
-```bash
-heroku login
-heroku create medico-ai-backend
-git push heroku main
-heroku config:set GEMINI_API_KEY=your_key_here
+### Backend
+Set these environment variables on the host (never commit them):
 ```
-
-**For Railway:**
-```bash
-railway login
-railway init
-railway up
+GEMINI_API_KEY=...
+DJANGO_SECRET_KEY=<long random string>
+DJANGO_ALLOWED_HOSTS=your-backend-host.example.com
+CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
 ```
+Leave `DJANGO_DEBUG` unset in production.
 
-After deployment, update the `VITE_BACKEND_URL` in Vercel with your backend URL.
-
-### Full Stack Deployment
-
-1. Deploy backend first (Heroku/Railway/DigitalOcean)
-2. Get backend URL
-3. Deploy frontend to Vercel with `VITE_BACKEND_URL` env var
-4. Frontend will automatically connect to your backend
+Heads-up: the default `torch` wheel from PyPI is very large (it bundles CUDA). Many hosts have size limits, so use a CPU-only PyTorch build there. The `.pt` model files (~65 MB) must be present on the server.
 
 ## ⚙️ Environment Variables
 
-## ⚙️ Environment Variables
+See `.env.example` for the full list with comments. The important ones: `GEMINI_API_KEY` (required for reports and chat) and `GEMINI_MODEL` (change it when Google retires a model; see the [deprecations page](https://ai.google.dev/gemini-api/docs/deprecations)).
 
-### Required (for Gemini reports & chatbot)
+## 📝 API
 
-```env
-GEMINI_API_KEY=your_google_gemini_api_key
-```
+### `POST /api/analyze/` (multipart form)
 
-Get your key at: [Google AI Studio](https://aistudio.google.com/app/apikey)
-
-### Frontend Variables (Optional)
-
-Create `frontend/.env.local` for local development:
-
-```env
-VITE_BACKEND_URL=http://localhost:8000
-VITE_API_ENDPOINT=/api
-VITE_FIREBASE_API_KEY=your_key
-VITE_FIREBASE_AUTH_DOMAIN=your_domain
-# ... other Firebase configs
-```
-
-## 🛠️ Development
-
-### Project Tech Stack
-
-- **Frontend:** React 18 + Vite + Tailwind CSS
-- **Backend:** Django 5.2 + Django REST Framework
-- **ML Models:** YOLO (Ultralytics) + PyTorch
-- **Reports:** Google Gemini API
-- **Hosting:** Vercel (Frontend) + Heroku/Railway (Backend)
-
-### Useful Commands
-
-```bash
-# Streamlit
-streamlit run main.py
-
-# Backend
-cd backend
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
-
-# Frontend development
-cd frontend
-npm run dev
-npm run build
-npm run preview
-
-# Run linting
-cd frontend
-npm run lint
-```
-
-## 📝 API Documentation
-
-### Analyze Endpoint
-
-**POST** `/api/analyze/`
+Fields: `image` (PNG/JPG, max 10 MB), `model` (one of the menu names above), `patient_name`, `patient_id`.
 
 ```json
 {
-  "image": <file>,
-  "model": "Tuberculosis (Lung Cancer)",
-  "patient_name": "John Doe",
-  "patient_id": "P123"
+  "detected_disease": "fracture (87.31%)",
+  "medical_report": "Patient: ... \n\n...notes...\n\n⚠️ disclaimer",
+  "report_error": "only present if the AI report failed; detection is still returned"
 }
 ```
 
-**Response:**
-```json
-{
-  "detected_disease": "Tuberculosis (92.5%)",
-  "medical_report": "Detailed medical report generated by Gemini..."
-}
-```
-
-### Chatbot Endpoint
-
-**POST** `/api/chatbot/`
+### `POST /api/chatbot/` (JSON)
 
 ```json
-{
-  "query": "What are symptoms of tuberculosis?"
-}
+{ "query": "What are symptoms of tuberculosis?" }
 ```
+Returns `{ "response": "..." }`.
 
-**Response:**
-```json
-{
-  "response": "Tuberculosis symptoms include..."
-}
-```
+Errors are always JSON: `{ "error": "message" }` with status 400 (bad input), 413 (too large), 429 (rate limited), 503 (AI/model unavailable).
 
 ## 🐛 Troubleshooting
 
-**Issue:** "Module not found: django"
-- **Solution:** Activate venv: `.\.venv311\Scripts\activate` (Windows) or `source .venv311/bin/activate` (macOS/Linux)
-
-**Issue:** "GEMINI_API_KEY is missing"
-- **Solution:** Create `.env` file with `GEMINI_API_KEY=your_key_here`
-
-**Issue:** Frontend can't connect to backend
-- **Solution:** Check `VITE_BACKEND_URL` in Vercel env vars or `.env.local`
-
-**Issue:** Model file not found
-- **Solution:** Ensure `.pt` files are in repository root and matches the model name
+| Problem | Fix |
+|---|---|
+| "The AI service is not configured" | Add `GEMINI_API_KEY` to `.env` and restart |
+| AI answers fail / "could not answer right now" | The model may be retired; update `GEMINI_MODEL` in `.env` |
+| Frontend: "Can't reach the server" | Make sure `python backend/manage.py runserver` is running |
+| Browser CORS error on a deployed site | Add the frontend's URL to `CORS_ALLOWED_ORIGINS` |
+| "Model file is missing" | The `.pt` files must be in the repository root |
+| HTTP 429 | Rate limit hit; wait a minute or raise `API_THROTTLE_RATE` |
 
 ## 📄 License
 
-This project is open source and available under the MIT License.
-
-## 👥 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-## 📞 Support
-
-If you encounter any issues, please open a GitHub issue or reach out to the maintainers.
+MIT License.

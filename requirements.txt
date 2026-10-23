@@ -1,9 +1,9 @@
-streamlit==1.52.2
 django==5.2.5
 djangorestframework==3.16.1
-google-generativeai==0.8.6
+django-cors-headers==4.9.0
+google-genai>=2.33.0
 ultralytics==8.4.33
 torch==2.11.0
-opencv-python
 numpy
 pillow
+gunicorn
