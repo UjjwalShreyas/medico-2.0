@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Override with GEMINI_MODEL in .env when Google retires/renames models.
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-REQUEST_TIMEOUT_MS = 30_000
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+REQUEST_TIMEOUT_MS = 90_000
 
 DISCLAIMER = (
     "⚠️ This report is AI-generated from an automated image model's output. "
