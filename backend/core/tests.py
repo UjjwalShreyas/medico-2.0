@@ -39,8 +39,31 @@ class ApiTestCase(SimpleTestCase):
 class AnalyzeEndpointTests(ApiTestCase):
     url = "/api/analyze/"
 
+    def setUp(self):
+        super().setUp()
+        patcher = mock.patch(
+            "core.views.validate_medical_scan",
+            return_value={"is_valid": True, "image_description": "Medical scan", "reason": ""},
+        )
+        self.mock_validate = patcher.start()
+        self.addCleanup(patcher.stop)
+
     def post(self, **fields):
         return self.client.post(self.url, fields, format="multipart")
+
+    def test_invalid_image_rejected_without_running_detection(self):
+        self.mock_validate.return_value = {
+            "is_valid": False,
+            "image_description": "cartoon illustration",
+            "reason": "Not a clinical medical scan.",
+        }
+        r = self.post(image=upload(), model="Eye Disease")
+        self.assertEqual(r.status_code, 200)
+        body = r.json()
+        self.assertEqual(body["is_valid_image"], False)
+        self.assertIn("Invalid Scan", body["detected_disease"])
+        self.assertEqual(body["medical_report"], "")
+        self.assertIn("Not a clinical", body["validation_error"])
 
     def test_missing_image_is_400(self):
         r = self.post(model="Eye Disease")

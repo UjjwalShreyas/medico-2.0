@@ -12,7 +12,12 @@ ROOT_DIR = Path(__file__).resolve().parent
 
 # Reuse backend helpers
 sys.path.insert(0, str(ROOT_DIR / "backend"))
-from core.gemini_utils import GeminiError, chat, generate_medical_report  # noqa: E402
+from core.gemini_utils import (  # noqa: E402
+    GeminiError,
+    chat,
+    generate_medical_report,
+    validate_medical_scan,
+)
 from core.yolo_utils import (  # noqa: E402
     MODEL_PATHS,
     NO_DETECTION,
@@ -283,6 +288,10 @@ if st.session_state["page"] == "Home & Overview":
 # --- 2. DOCTOR PORTAL ---
 # ========================================================
 elif st.session_state["page"] == "Doctor Portal":
+    if st.button("← Back to Home / Overview", key="btn_back_doc"):
+        st.session_state["page"] = "Home & Overview"
+        st.rerun()
+
     st.markdown(
         '<div style="padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid rgba(87,3,0,0.15);">'
         '<h2 style="font-size:22px; font-weight:800; color:#570300; margin:0 0 4px 0;">Doctor Diagnostic Workstation</h2>'
@@ -345,18 +354,30 @@ elif st.session_state["page"] == "Doctor Portal":
             st.session_state["uploaded_file"] = uploaded_file
 
         if submit_button and st.session_state["uploaded_image"] is not None:
-            try:
-                detection_model = load_detection_model(model_selection)
-            except (UnknownModelError, FileNotFoundError) as exc:
-                st.error(str(exc))
+            # First validate image suitability
+            with st.spinner("Validating image scan modality…"):
+                val = validate_medical_scan(st.session_state["uploaded_image"], model_selection)
+
+            if not val.get("is_valid", True):
+                st.error(f"⚠️ Unsuitable Scan: {val.get('reason') or 'The image does not match the chosen modality.'}")
+                st.session_state["analyzed_image"] = None
+                st.session_state["detected_disease"] = "Invalid Scan / Modality Mismatch"
+                st.session_state["report_key"] = None
+                st.session_state["report_error"] = val.get("reason", "")
+                st.session_state["report_text"] = ""
             else:
-                with st.spinner("Analyzing image with YOLO…"):
-                    analyzed_image, detected_disease = detect_disease(
-                        st.session_state["uploaded_image"], detection_model, model_selection
-                    )
-                    st.session_state["analyzed_image"] = analyzed_image
-                    st.session_state["detected_disease"] = detected_disease
-                    st.session_state["report_key"] = None
+                try:
+                    detection_model = load_detection_model(model_selection)
+                except (UnknownModelError, FileNotFoundError) as exc:
+                    st.error(str(exc))
+                else:
+                    with st.spinner("Analyzing image with YOLO…"):
+                        analyzed_image, detected_disease = detect_disease(
+                            st.session_state["uploaded_image"], detection_model, model_selection
+                        )
+                        st.session_state["analyzed_image"] = analyzed_image
+                        st.session_state["detected_disease"] = detected_disease
+                        st.session_state["report_key"] = None
 
     with col2:
         st.markdown("<h4 style='color:#570300; font-size:14px; font-weight:700; margin-top:10px; margin-bottom:6px;'>Diagnostic Results & Clinical Notes</h4>", unsafe_allow_html=True)
@@ -410,6 +431,10 @@ elif st.session_state["page"] == "Doctor Portal":
 # --- 3. PATIENT PORTAL ---
 # ========================================================
 elif st.session_state["page"] == "Patient Portal":
+    if st.button("← Back to Home / Overview", key="btn_back_pat"):
+        st.session_state["page"] = "Home & Overview"
+        st.rerun()
+
     st.markdown(
         '<div style="padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid rgba(87,3,0,0.15);">'
         '<h2 style="font-size:22px; font-weight:800; color:#570300; margin:0 0 4px 0;">Patient Scan Checker</h2>'
@@ -466,14 +491,21 @@ elif st.session_state["page"] == "Patient Portal":
             if "pat_img" not in st.session_state or st.session_state["pat_img"] is None:
                 st.warning("Please choose an image or click a sample scan first.")
             else:
-                try:
-                    d_model = load_detection_model(pat_model)
-                except Exception as exc:
-                    st.error(str(exc))
+                with st.spinner("Validating scan suitability…"):
+                    val = validate_medical_scan(st.session_state["pat_img"], pat_model)
+
+                if not val.get("is_valid", True):
+                    st.error(f"⚠️ Unsuitable Scan: {val.get('reason') or 'The image does not match the selected body part.'}")
+                    st.session_state["patient_finding"] = "Invalid Scan / Modality Mismatch"
                 else:
-                    with st.spinner("Checking your scan…"):
-                        _, pat_finding = detect_disease(st.session_state["pat_img"], d_model, pat_model)
-                        st.session_state["patient_finding"] = pat_finding
+                    try:
+                        d_model = load_detection_model(pat_model)
+                    except Exception as exc:
+                        st.error(str(exc))
+                    else:
+                        with st.spinner("Checking your scan…"):
+                            _, pat_finding = detect_disease(st.session_state["pat_img"], d_model, pat_model)
+                            st.session_state["patient_finding"] = pat_finding
 
         if st.session_state.get("patient_finding"):
             st.markdown(
@@ -492,6 +524,10 @@ elif st.session_state["page"] == "Patient Portal":
 # --- 4. CLINICAL ASSISTANT ---
 # ========================================================
 elif st.session_state["page"] == "Clinical Assistant":
+    if st.button("← Back to Home / Overview", key="btn_back_chat"):
+        st.session_state["page"] = "Home & Overview"
+        st.rerun()
+
     st.markdown(
         '<div style="padding-bottom:12px; margin-bottom:16px; border-bottom:1px solid rgba(87,3,0,0.15);">'
         '<h2 style="font-size:22px; font-weight:800; color:#570300; margin:0 0 4px 0;">Medical Information Assistant</h2>'

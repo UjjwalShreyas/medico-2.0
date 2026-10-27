@@ -30,7 +30,7 @@ const SCAN_TYPES = [
   },
 ];
 
-function PatientPortal({ onConsultChatbot }) {
+function PatientPortal({ onBack, onConsultChatbot }) {
   const [patientName, setPatientName] = useState("Sarah");
   const [image, setImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -91,6 +91,9 @@ function PatientPortal({ onConsultChatbot }) {
         disease: res.data.detected_disease,
         report: res.data.medical_report,
         reportError: res.data.report_error,
+        isValidImage: res.data.is_valid_image,
+        validationError: res.data.validation_error,
+        detectedType: res.data.detected_image_type,
       });
     } catch (err) {
       setError(errorMessage(err));
@@ -101,7 +104,20 @@ function PatientPortal({ onConsultChatbot }) {
 
   return (
     <div className="flex-1 bg-lemon text-ruby p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-5">
+
+        {/* Back Button */}
+        {onBack && (
+          <button
+            id="patient-back-btn"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-ruby/10 hover:bg-ruby/20 text-ruby font-bold text-xs border border-ruby/25 transition-all cursor-pointer group shadow-2xs"
+            title="Back to Home"
+          >
+            <span className="transition-transform group-hover:-translate-x-1 font-bold">←</span>
+            <span>Back to Home</span>
+          </button>
+        )}
 
         {/* Header */}
         <div className="pb-4 border-b border-ruby/15 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -245,20 +261,48 @@ function PatientPortal({ onConsultChatbot }) {
               </span>
             </div>
 
-            <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
-              <p className="text-[11px] font-bold text-ruby/60 uppercase tracking-wide">Observed Marker</p>
-              <p className="text-base font-extrabold text-ruby mt-0.5">{result.disease}</p>
-            </div>
-
-            {result.report && (
-              <div className="p-4 rounded-lg bg-white border border-ruby/20 space-y-2">
-                <p className="text-xs font-bold text-ruby uppercase tracking-wide">
-                  What Does This Mean?
+            {/* Unsuitable or Mismatched Image Warning */}
+            {result.isValidImage === false ? (
+              <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-500 text-amber-950 space-y-2.5">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-xl leading-none">⚠️</span>
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-950">
+                      Unsuitable or Mismatched Image
+                    </h3>
+                    {result.detectedType && (
+                      <p className="text-[11px] font-semibold text-amber-800 mt-0.5">
+                        Image recognized as: <span className="font-bold underline">{result.detectedType}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed text-amber-900 font-medium">
+                  {result.validationError ||
+                    "The uploaded image does not appear to be an authentic medical scan for this body part. Please select a genuine medical scan."}
                 </p>
-                <div className="text-xs text-ruby/90 leading-relaxed whitespace-pre-wrap font-medium">
-                  {result.report}
+                <div className="text-[11px] text-amber-800 bg-amber-100/70 p-2 rounded-lg font-medium">
+                  💡 <b>Tip:</b> Make sure you upload a real Chest X-Ray for respiratory checks, a close-up eye photo for vision checks, or a bone X-ray for fracture checks.
                 </div>
               </div>
+            ) : (
+              <>
+                <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
+                  <p className="text-[11px] font-bold text-ruby/60 uppercase tracking-wide">Observed Marker</p>
+                  <p className="text-base font-extrabold text-ruby mt-0.5">{result.disease}</p>
+                </div>
+
+                {result.report && (
+                  <div className="p-4 rounded-lg bg-white border border-ruby/20 space-y-2">
+                    <p className="text-xs font-bold text-ruby uppercase tracking-wide">
+                      What Does This Mean?
+                    </p>
+                    <div className="text-xs text-ruby/90 leading-relaxed whitespace-pre-wrap font-medium">
+                      {result.report}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Helpful Next Steps */}

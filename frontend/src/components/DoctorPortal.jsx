@@ -30,7 +30,7 @@ const MODELS = [
   },
 ];
 
-function DoctorPortal() {
+function DoctorPortal({ onBack }) {
   const [patientName, setPatientName] = useState("Sarah Jenkins");
   const [patientId, setPatientId] = useState("PT-1049");
   const [doctorNotes, setDoctorNotes] = useState("");
@@ -106,6 +106,9 @@ function DoctorPortal() {
         disease: res.data.detected_disease,
         report: res.data.medical_report,
         reportError: res.data.report_error,
+        isValidImage: res.data.is_valid_image,
+        validationError: res.data.validation_error,
+        detectedType: res.data.detected_image_type,
       });
     } catch (err) {
       setError(errorMessage(err));
@@ -121,7 +124,20 @@ function DoctorPortal() {
 
   return (
     <div className="flex-1 bg-[#EEDCC8] text-ruby p-4 sm:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-5">
+
+        {/* Back Button */}
+        {onBack && (
+          <button
+            id="doctor-back-btn"
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-ruby/10 hover:bg-ruby/20 text-ruby font-bold text-xs border border-ruby/25 transition-all cursor-pointer group shadow-2xs"
+            title="Back to Home"
+          >
+            <span className="transition-transform group-hover:-translate-x-1 font-bold">←</span>
+            <span>Back to Home</span>
+          </button>
+        )}
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-5 border-b border-ruby/15">
@@ -312,28 +328,56 @@ function DoctorPortal() {
 
                 {result && (
                   <div className="space-y-4">
-                    {/* Primary Finding */}
-                    <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
-                      <p className="text-[11px] font-bold text-ruby/60 uppercase tracking-wide">Model Detection</p>
-                      <p className="text-base font-extrabold text-ruby mt-0.5">{result.disease}</p>
-                    </div>
-
-                    {/* Gemini AI Notes */}
-                    {result.report && (
-                      <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
-                        <p className="text-[11px] font-bold text-ruby uppercase tracking-wide mb-1.5">
-                          Educational Clinical Notes (Gemini AI)
+                    {/* Unsuitable or Mismatched Image Warning */}
+                    {result.isValidImage === false ? (
+                      <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-500 text-amber-950 space-y-2.5">
+                        <div className="flex items-start gap-2.5">
+                          <span className="text-xl leading-none">⚠️</span>
+                          <div>
+                            <h3 className="text-sm font-bold text-amber-950">
+                              Unsuitable or Mismatched Image
+                            </h3>
+                            {result.detectedType && (
+                              <p className="text-[11px] font-semibold text-amber-800 mt-0.5">
+                                Image detected as: <span className="font-bold underline">{result.detectedType}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs leading-relaxed text-amber-900 font-medium">
+                          {result.validationError ||
+                            "The uploaded image does not appear to be an authentic medical scan for this category. Please upload an authentic medical image matching this model."}
                         </p>
-                        <div className="text-xs text-ruby/90 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto pr-1 font-medium">
-                          {result.report}
+                        <div className="text-[11px] text-amber-800 bg-amber-100/70 p-2 rounded-lg font-medium">
+                          💡 <b>Tip:</b> Make sure you upload a real Chest X-Ray for Tuberculosis, a close-up eye photo/retinal scan for Eye Disease, or a bone radiograph for Bone Fracture.
                         </div>
                       </div>
-                    )}
+                    ) : (
+                      <>
+                        {/* Primary Finding */}
+                        <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
+                          <p className="text-[11px] font-bold text-ruby/60 uppercase tracking-wide">Model Detection</p>
+                          <p className="text-base font-extrabold text-ruby mt-0.5">{result.disease}</p>
+                        </div>
 
-                    {result.reportError && (
-                      <div className="p-3 rounded-lg bg-amber-100 border border-amber-400 text-amber-900 text-xs font-semibold">
-                        AI Report Notice: {result.reportError}
-                      </div>
+                        {/* Gemini AI Notes */}
+                        {result.report && (
+                          <div className="p-3.5 rounded-lg bg-white border border-ruby/20">
+                            <p className="text-[11px] font-bold text-ruby uppercase tracking-wide mb-1.5">
+                              Educational Clinical Notes (Gemini AI)
+                            </p>
+                            <div className="text-xs text-ruby/90 whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto pr-1 font-medium">
+                              {result.report}
+                            </div>
+                          </div>
+                        )}
+
+                        {result.reportError && (
+                          <div className="p-3 rounded-lg bg-amber-100 border border-amber-400 text-amber-900 text-xs font-semibold">
+                            AI Report Notice: {result.reportError}
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {/* Doctor's Notes */}

@@ -7,7 +7,12 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .gemini_utils import GeminiError, chat, generate_medical_report
+from .gemini_utils import (
+    GeminiError,
+    chat,
+    generate_medical_report,
+    validate_medical_scan,
+)
 from .yolo_utils import (
     MODEL_PATHS,
     NO_DETECTION,
@@ -51,6 +56,22 @@ class AnalyzeImageAPIView(APIView):
         except Exception:
             return error("That file is not a readable image (use PNG or JPG).", status.HTTP_400_BAD_REQUEST)
 
+        # 1. Modality and content validation with Gemini Vision
+        validation = validate_medical_scan(image, model_name)
+        if not validation.get("is_valid", True):
+            rejection_reason = validation.get("reason") or (
+                f"The uploaded image appears to be '{validation.get('image_description', 'an incompatible image')}', "
+                f"which does not match the expected scan type for '{model_name}'. "
+                f"Please upload an authentic medical scan."
+            )
+            return Response({
+                "detected_disease": "Invalid Scan / Modality Mismatch",
+                "medical_report": "",
+                "is_valid_image": False,
+                "validation_error": rejection_reason,
+                "detected_image_type": validation.get("image_description", ""),
+            })
+
         try:
             model = load_detection_model(model_name)
             detected_disease = detect_disease(image, model, model_name)
@@ -63,7 +84,12 @@ class AnalyzeImageAPIView(APIView):
             logger.exception("Detection failed for model %s", model_name)
             return error("Image analysis failed. Please try a different image.", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        payload = {"detected_disease": detected_disease, "medical_report": ""}
+        payload = {
+            "detected_disease": detected_disease,
+            "medical_report": "",
+            "is_valid_image": True,
+            "detected_image_type": validation.get("image_description", "Medical scan"),
+        }
 
         if detected_disease != NO_DETECTION:
             try:

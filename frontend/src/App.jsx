@@ -42,19 +42,34 @@ function App() {
       <header className="bg-[#EEDCC8] border-b border-ruby/20 px-4 sm:px-8 py-3.5 flex justify-between items-center sticky top-0 z-50 shadow-xs">
 
         {/* Brand */}
-        <div
-          className="flex items-center gap-2.5 cursor-pointer select-none"
-          onClick={() => navigate("Home")}
-        >
-          <div className="w-8 h-8 rounded-lg bg-ruby text-[#EEDCC8] flex items-center justify-center font-bold text-base shadow-sm">
-            M
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer select-none"
+            onClick={() => navigate("Home")}
+          >
+            <div className="w-8 h-8 rounded-lg bg-ruby text-[#EEDCC8] flex items-center justify-center font-bold text-base shadow-sm">
+              M
+            </div>
+            <div>
+              <span className="font-extrabold text-ruby text-lg tracking-tight">Medico</span>
+              <span className="text-ruby/70 text-xs ml-1.5 hidden sm:inline font-medium">
+                Clinical Scan Assistant
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="font-extrabold text-ruby text-lg tracking-tight">Medico</span>
-            <span className="text-ruby/70 text-xs ml-1.5 hidden sm:inline font-medium">
-              Clinical Scan Assistant
-            </span>
-          </div>
+
+          {/* Quick Back to Home button in header when on inner pages */}
+          {activeTab !== "Home" && (
+            <button
+              id="header-back-btn"
+              onClick={() => navigate("Home")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ruby/10 hover:bg-ruby/20 text-ruby font-bold text-xs border border-ruby/25 transition-all cursor-pointer shadow-xs ml-2 sm:ml-4"
+              title="Return to Home page"
+            >
+              <span className="text-sm leading-none font-bold">←</span>
+              <span>Back to Home</span>
+            </button>
+          )}
         </div>
 
         {/* Hamburger button + dropdown */}
@@ -124,9 +139,9 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col bg-[#EEDCC8]">
         {activeTab === "Home"    && <HomePage onNavigate={(tab) => navigate(tab)} />}
-        {activeTab === "Doctor"  && <DoctorPortal />}
-        {activeTab === "Patient" && <PatientPortal onConsultChatbot={() => navigate("Chatbot")} />}
-        {activeTab === "Chatbot" && <ChatbotPage />}
+        {activeTab === "Doctor"  && <DoctorPortal onBack={() => navigate("Home")} />}
+        {activeTab === "Patient" && <PatientPortal onBack={() => navigate("Home")} onConsultChatbot={() => navigate("Chatbot")} />}
+        {activeTab === "Chatbot" && <ChatbotPage onBack={() => navigate("Home")} />}
       </main>
 
       {/* Footer */}

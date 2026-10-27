@@ -8,7 +8,7 @@ const STARTER_QUESTIONS = [
   "How can I prepare for a radiologist appointment?",
 ];
 
-function ChatbotPage() {
+function ChatbotPage({ onBack }) {
   const [query, setQuery] = useState("");
   const [history, setHistory] = useState([
     {
@@ -69,18 +69,35 @@ function ChatbotPage() {
 
   return (
     <div className="flex-1 flex flex-col bg-lemon text-ruby p-4 sm:p-6">
-      <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col bg-[#FAF3EC] border border-ruby/20 rounded-2xl overflow-hidden shadow-xs">
-        
-        {/* Header */}
-        <div className="p-4 px-6 border-b border-ruby/15 flex justify-between items-center bg-[#F5ECE1]">
+      <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col space-y-3">
+
+        {/* Back Button */}
+        {onBack && (
           <div>
-            <h1 className="text-base font-bold text-ruby">
-              Medical Information Assistant
-            </h1>
-            <p className="text-xs text-ruby/70 font-medium">
-              General educational guidance powered by Google Gemini
-            </p>
+            <button
+              id="chatbot-back-btn"
+              onClick={onBack}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-ruby/10 hover:bg-ruby/20 text-ruby font-bold text-xs border border-ruby/25 transition-all cursor-pointer group shadow-2xs"
+              title="Back to Home"
+            >
+              <span className="transition-transform group-hover:-translate-x-1 font-bold">←</span>
+              <span>Back to Home</span>
+            </button>
           </div>
+        )}
+
+        <div className="flex-1 flex flex-col bg-[#FAF3EC] border border-ruby/20 rounded-2xl overflow-hidden shadow-xs">
+
+          {/* Header */}
+          <div className="p-4 px-6 border-b border-ruby/15 flex justify-between items-center bg-[#F5ECE1]">
+            <div>
+              <h1 className="text-base font-bold text-ruby">
+                Medical Information Assistant
+              </h1>
+              <p className="text-xs text-ruby/70 font-medium">
+                General educational guidance powered by Google Gemini
+              </p>
+            </div>
 
           <button
             onClick={handleClear}
@@ -179,6 +196,7 @@ function ChatbotPage() {
           </p>
         </div>
 
+        </div>
       </div>
     </div>
   );
